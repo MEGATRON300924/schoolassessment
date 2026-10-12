@@ -1,7 +1,10 @@
 #include "MainWindow.h"
 #include "utils/FileHandler.h"
+#include <QAbstractItemView>
 #include <QAction>
+#include <QColor>
 #include <QComboBox>
+#include <QDate>
 #include <QDateTime>
 #include <QDateTimeEdit>
 #include <QFormLayout>
@@ -59,6 +62,6 @@ void MainWindow::addToQueue(){}
 void MainWindow::callNext(){auto p=controller_.database().callNext();if(!p)QMessageBox::information(this,"Waiting queue","The waiting queue is empty.");else QMessageBox::information(this,"Next patient",QString("Please call %1 (%2).").arg(QString::fromStdString(p->name()),QString::fromStdString(p->patientID())));refresh();}
 void MainWindow::search(){auto q=searchEdit_->text().trimmed().toStdString();if(q.empty())return;int i=controller_.searchId(q);if(i<0)i=controller_.searchName(q);if(i<0)QMessageBox::information(this,"Search","No matching patient found.");else{patientsTable_->selectRow(i);patientsTable_->scrollToItem(patientsTable_->item(i,0));}}
 void MainWindow::sort(){Utils::SortKey k=sortKeyBox_->currentText()=="ID"?Utils::SortKey::ID:(sortKeyBox_->currentText()=="Age"?Utils::SortKey::Age:Utils::SortKey::Name);controller_.sort(k,algorithmBox_->currentIndex()==0);refresh();}
-void MainWindow::showReports(){int general=0,emergency=0,follow=0;for(const auto&p:controller_.database().patients()){if(p->category()=="Emergency")++emergency;else if(p->category()=="Follow-up")++follow;else ++general;}int pending=0;QString today=QDate::currentDate().toString(Qt::ISODate);for(const auto&a:controller_.database().appointments())if(!a.completed){++pending;}status_->setText(QString("Patients: %1\nGeneral: %2 | Emergency: %3 | Follow-up: %4\nPending appointments: %5\nToday's date: %6").arg(controller_.database().patients().size()).arg(general).arg(emergency).arg(follow).arg(pending).arg(today));}
+void MainWindow::showReports(){int general=0,emergency=0,follow=0;for(const auto&p:controller_.database().patients()){if(p->category()=="Emergency")++emergency;else if(p->category()=="Follow-up")++follow;else ++general;}int pending=0;for(const auto&a:controller_.database().appointments())if(!a.completed){++pending;}QString today=QDate::currentDate().toString(Qt::ISODate);status_->setText(QString("Patients: %1\nGeneral: %2 | Emergency: %3 | Follow-up: %4\nPending appointments: %5\nToday's date: %6").arg(controller_.database().patients().size()).arg(general).arg(emergency).arg(follow).arg(pending).arg(today));}
 void MainWindow::saveNow(){try{controller_.save();status_->setText("Data saved to "+Utils::FileHandler::defaultPath());}catch(const std::exception&e){QMessageBox::critical(this,"Save failed",e.what());}}
 }
