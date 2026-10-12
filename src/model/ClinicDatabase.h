@@ -32,6 +32,7 @@ public:
     void touchRecent(const std::string&);
     std::stack<AdminCommand>& undoStack() noexcept { return undo_; }
     void loadData(const std::vector<PatientPtr>&, const std::vector<Appointment>&);
+    void reorderPatients(const std::vector<PatientPtr>& ordered);
 private:
     std::vector<PatientPtr> patients_;
     std::vector<Appointment> appointments_;
