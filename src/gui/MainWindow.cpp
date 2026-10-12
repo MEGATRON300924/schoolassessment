@@ -24,7 +24,7 @@
 namespace UI {
 MainWindow::MainWindow(Controller::ClinicController& c,QWidget* p):QMainWindow(p),controller_(c){
  setWindowTitle("SCAPMS — Smart Clinic Management");resize(1100,720);buildUi();
- connect(&timer_,&QTimer::timeout,this,[this]{refresh();});timer_.start(15000);refresh();
+ connect(&refreshTimer_,&QTimer::timeout,this,[this]{refresh();});timer_.start(15000);refresh();
 }
 void MainWindow::buildUi(){
  auto* root=new QWidget(this);auto* layout=new QVBoxLayout(root);auto* tabs=new QTabWidget(root);
@@ -56,9 +56,7 @@ void MainWindow::refresh(){
 void MainWindow::addPatient(){try{auto p=Model::makePatient(categoryBox_->currentText().toStdString(),idEdit_->text().trimmed().toStdString(),nameEdit_->text().trimmed().toStdString(),ageEdit_->value(),contactEdit_->text().trimmed().toStdString());controller_.database().addPatient(p);idEdit_->clear();nameEdit_->clear();contactEdit_->clear();refresh();}catch(const std::exception&e){QMessageBox::warning(this,"Invalid patient",e.what());}}
 void MainWindow::editPatient(){int r=patientsTable_->currentRow();if(r<0){QMessageBox::information(this,"Edit","Select a patient row first.");return;}auto id=patientsTable_->item(r,0)->text().toStdString();auto p=controller_.database().findPatient(id);if(!p)return;bool ok=false;QString name=QInputDialog::getText(this,"Edit patient","Name:",QLineEdit::Normal,QString::fromStdString(p->name()),&ok);if(!ok)return;int age=QInputDialog::getInt(this,"Edit patient","Age:",p->age(),0,120,1,&ok);if(!ok)return;QString contact=QInputDialog::getText(this,"Edit patient","Contact:",QLineEdit::Normal,QString::fromStdString(p->contact()),&ok);if(!ok)return;try{controller_.database().editPatient(id,name.trimmed().toStdString(),age,contact.trimmed().toStdString());refresh();}catch(const std::exception&e){QMessageBox::warning(this,"Edit failed",e.what());}}
 void MainWindow::deletePatient(){int r=patientsTable_->currentRow();if(r<0){QMessageBox::information(this,"Delete","Select a patient row first.");return;}auto id=patientsTable_->item(r,0)->text().toStdString();if(QMessageBox::question(this,"Confirm delete","Delete selected patient?")!=QMessageBox::Yes)return;if(!controller_.database().removePatient(id))QMessageBox::warning(this,"Delete","Patient not found.");refresh();}
-void MainWindow::scheduleAppointment(){}
 void MainWindow::cancelAppointment(){int r=appointmentsTable_->currentRow();if(r<0){QMessageBox::information(this,"Cancel","Select an appointment first.");return;}auto id=appointmentsTable_->item(r,0)->text().toStdString();if(!controller_.database().cancelAppointment(id))QMessageBox::warning(this,"Cancel","Appointment not found.");refresh();}
-void MainWindow::addToQueue(){}
 void MainWindow::callNext(){auto p=controller_.database().callNext();if(!p)QMessageBox::information(this,"Waiting queue","The waiting queue is empty.");else QMessageBox::information(this,"Next patient",QString("Please call %1 (%2).").arg(QString::fromStdString(p->name()),QString::fromStdString(p->patientID())));refresh();}
 void MainWindow::search(){auto q=searchEdit_->text().trimmed().toStdString();if(q.empty())return;int i=controller_.searchId(q);if(i<0)i=controller_.searchName(q);if(i<0)QMessageBox::information(this,"Search","No matching patient found.");else{patientsTable_->selectRow(i);patientsTable_->scrollToItem(patientsTable_->item(i,0));}}
 void MainWindow::sort(){Utils::SortKey k=sortKeyBox_->currentText()=="ID"?Utils::SortKey::ID:(sortKeyBox_->currentText()=="Age"?Utils::SortKey::Age:Utils::SortKey::Name);controller_.sort(k,algorithmBox_->currentIndex()==0);refresh();}
