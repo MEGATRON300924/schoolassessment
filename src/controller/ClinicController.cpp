@@ -6,7 +6,7 @@
 #include <QDateTime>
 #include <stdexcept>
 namespace Controller {
-void ClinicController::sort(Utils::SortKey k,bool quick){auto copy=db_.patients();if(quick)Utils::quickSort(copy,k);else Utils::mergeSort(copy,k);auto ap=db_.appointments();db_.clear();for(auto&p:copy)db_.addPatient(p);for(const auto&a:ap)db_.restoreAppointment(a);}
+void ClinicController::sort(Utils::SortKey k,bool quick){auto copy=db_.patients();if(quick)Utils::quickSort(copy,k);else Utils::mergeSort(copy,k);db_.reorderPatients(copy);}
 int ClinicController::searchId(const std::string&id)const{return Utils::linearSearchById(db_.patients(),id);}
 int ClinicController::searchName(const std::string&name)const{return Utils::recursiveSearchByName(db_.patients(),name);}
 void ClinicController::save()const{
