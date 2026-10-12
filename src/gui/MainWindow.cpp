@@ -24,7 +24,7 @@
 namespace UI {
 MainWindow::MainWindow(Controller::ClinicController& c,QWidget* p):QMainWindow(p),controller_(c){
  setWindowTitle("SCAPMS — Smart Clinic Management");resize(1100,720);buildUi();
- connect(&refreshTimer_,&QTimer::timeout,this,[this]{refresh();});timer_.start(15000);refresh();
+ connect(&refreshTimer_,&QTimer::timeout,this,[this]{refresh();});refreshTimer_.start(15000);refresh();
 }
 void MainWindow::buildUi(){
  auto* root=new QWidget(this);auto* layout=new QVBoxLayout(root);auto* tabs=new QTabWidget(root);
