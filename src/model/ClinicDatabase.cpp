@@ -18,4 +18,5 @@ void ClinicDatabase::restoreEdit(const AdminCommand&c){if(c.patient){c.patient->
 void ClinicDatabase::touchRecent(const std::string&id){recent_[recentNext_++%recent_.size()]=id;}
 void ClinicDatabase::clear(){patients_.clear();appointments_.clear();waiting_={};undo_={};recent_={};recentNext_=0;}
 void ClinicDatabase::loadData(const std::vector<PatientPtr>&p,const std::vector<Appointment>&a){clear();for(const auto&x:p)addPatient(x);appointments_=a;nextAppointment_=static_cast<unsigned long>(appointments_.size()+1);}
+void ClinicDatabase::reorderPatients(const std::vector<PatientPtr>& ordered){if(ordered.size()!=patients_.size())throw std::invalid_argument("Sorted patient list does not match database size.");for(const auto& p:ordered)if(!p||!findPatient(p->patientID()))throw std::invalid_argument("Sorted patient list contains an unknown record.");patients_=ordered;}
 }
