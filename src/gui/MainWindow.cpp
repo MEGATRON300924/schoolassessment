@@ -49,7 +49,8 @@ void MainWindow::buildUi(){
 }
 void MainWindow::refresh(){
  const auto& db=controller_.database();patientsTable_->setRowCount(0);
- searchResultsTable_->setRowCount(0);\n for(const auto&p:db.patients()){int r=patientsTable_->rowCount();patientsTable_->insertRow(r);searchResultsTable_->insertRow(searchResultsTable_->rowCount());QStringList vals{QString::fromStdString(p->patientID()),QString::fromStdString(p->name()),QString::number(p->age()),QString::fromStdString(p->contact()),QString::fromStdString(p->category())};for(int c=0;c<vals.size();++c){auto* item=new QTableWidgetItem(vals[c]);if(p->category()=="Emergency"){item->setBackground(QColor(255,220,220));item->setForeground(QColor(140,0,0));}patientsTable_->setItem(r,c,item);searchResultsTable_->setItem(r,c,new QTableWidgetItem(vals[c]));}}
+ searchResultsTable_->setRowCount(0);
+ for(const auto&p:db.patients()){int r=patientsTable_->rowCount();patientsTable_->insertRow(r);searchResultsTable_->insertRow(searchResultsTable_->rowCount());QStringList vals{QString::fromStdString(p->patientID()),QString::fromStdString(p->name()),QString::number(p->age()),QString::fromStdString(p->contact()),QString::fromStdString(p->category())};for(int c=0;c<vals.size();++c){auto* item=new QTableWidgetItem(vals[c]);if(p->category()=="Emergency"){item->setBackground(QColor(255,220,220));item->setForeground(QColor(140,0,0));}patientsTable_->setItem(r,c,item);searchResultsTable_->setItem(r,c,new QTableWidgetItem(vals[c]));}}
  appointmentsTable_->setRowCount(0);for(const auto&a:db.appointments()){int r=appointmentsTable_->rowCount();appointmentsTable_->insertRow(r);QStringList vals{QString::fromStdString(a.id),QString::fromStdString(a.patientId),QString::fromStdString(a.dateTime),QString::fromStdString(a.reason),a.completed?"Completed":"Pending"};for(int c=0;c<vals.size();++c)appointmentsTable_->setItem(r,c,new QTableWidgetItem(vals[c]));}
  auto queue=db.waitingQueue();queueTable_->setRowCount(0);int pos=1;while(!queue.empty()){auto p=queue.front();queue.pop();int r=queueTable_->rowCount();queueTable_->insertRow(r);queueTable_->setItem(r,0,new QTableWidgetItem(QString::number(pos++)));queueTable_->setItem(r,1,new QTableWidgetItem(QString::fromStdString(p->patientID())));queueTable_->setItem(r,2,new QTableWidgetItem(QString::fromStdString(p->name())));}
 }
@@ -58,8 +59,25 @@ void MainWindow::editPatient(){int r=patientsTable_->currentRow();if(r<0){QMessa
 void MainWindow::deletePatient(){int r=patientsTable_->currentRow();if(r<0){QMessageBox::information(this,"Delete","Select a patient row first.");return;}auto id=patientsTable_->item(r,0)->text().toStdString();if(QMessageBox::question(this,"Confirm delete","Delete selected patient?")!=QMessageBox::Yes)return;if(!controller_.database().removePatient(id))QMessageBox::warning(this,"Delete","Patient not found.");refresh();}
 void MainWindow::cancelAppointment(){int r=appointmentsTable_->currentRow();if(r<0){QMessageBox::information(this,"Cancel","Select an appointment first.");return;}auto id=appointmentsTable_->item(r,0)->text().toStdString();if(!controller_.database().cancelAppointment(id))QMessageBox::warning(this,"Cancel","Appointment not found.");refresh();}
 void MainWindow::callNext(){auto p=controller_.database().callNext();if(!p)QMessageBox::information(this,"Waiting queue","The waiting queue is empty.");else QMessageBox::information(this,"Next patient",QString("Please call %1 (%2).").arg(QString::fromStdString(p->name()),QString::fromStdString(p->patientID())));refresh();}
-void MainWindow::search(){\n const auto query=searchEdit_->text().trimmed().toStdString();\n if(query.empty()){searchSortStatus_->setText("Enter a patient ID or part of a name to search.");return;}\n int index=controller_.searchId(query);\n if(index<0)index=controller_.searchName(query);\n if(index<0){searchResultsTable_->clearSelection();searchSortStatus_->setText("No patient matched that ID or name.");QMessageBox::information(this,"Search","No matching patient found.");return;}\n searchResultsTable_->selectRow(index);searchResultsTable_->scrollToItem(searchResultsTable_->item(index,0));\n patientsTable_->selectRow(index);patientsTable_->scrollToItem(patientsTable_->item(index,0));\n const auto& patient=controller_.database().patients()[static_cast<std::size_t>(index)];\n searchSortStatus_->setText("Found patient: "+QString::fromStdString(patient->name())+" (ID: "+QString::fromStdString(patient->patientID())+").");\n }
-void MainWindow::sort(){\n const QString key=sortKeyBox_->currentText();\n const Utils::SortKey sortKey=key=="ID"?Utils::SortKey::ID:(key=="Age"?Utils::SortKey::Age:Utils::SortKey::Name);\n const bool quickSort=algorithmBox_->currentIndex()==0;\n controller_.sort(sortKey,quickSort);refresh();\n searchSortStatus_->setText(QString("Sorted %1 patient record(s) by %2 using %3 sort.")\n     .arg(searchResultsTable_->rowCount()).arg(key).arg(quickSort?"quick":"merge"));\n }
+void MainWindow::search(){
+ const auto query=searchEdit_->text().trimmed().toStdString();
+ if(query.empty()){searchSortStatus_->setText("Enter a patient ID or part of a name to search.");return;}
+ int index=controller_.searchId(query);
+ if(index<0)index=controller_.searchName(query);
+ if(index<0){searchResultsTable_->clearSelection();searchSortStatus_->setText("No patient matched that ID or name.");QMessageBox::information(this,"Search","No matching patient found.");return;}
+ searchResultsTable_->selectRow(index);searchResultsTable_->scrollToItem(searchResultsTable_->item(index,0));
+ patientsTable_->selectRow(index);patientsTable_->scrollToItem(patientsTable_->item(index,0));
+ const auto& patient=controller_.database().patients()[static_cast<std::size_t>(index)];
+ searchSortStatus_->setText("Found patient: "+QString::fromStdString(patient->name())+" (ID: "+QString::fromStdString(patient->patientID())+").");
+ }
+void MainWindow::sort(){
+ const QString key=sortKeyBox_->currentText();
+ const Utils::SortKey sortKey=key=="ID"?Utils::SortKey::ID:(key=="Age"?Utils::SortKey::Age:Utils::SortKey::Name);
+ const bool quickSort=algorithmBox_->currentIndex()==0;
+ controller_.sort(sortKey,quickSort);refresh();
+ searchSortStatus_->setText(QString("Sorted %1 patient record(s) by %2 using %3 sort.")
+     .arg(searchResultsTable_->rowCount()).arg(key).arg(quickSort?"quick":"merge"));
+ }
 void MainWindow::showReports(){int general=0,emergency=0,follow=0;for(const auto&p:controller_.database().patients()){if(p->category()=="Emergency")++emergency;else if(p->category()=="Follow-up")++follow;else ++general;}int pending=0;for(const auto&a:controller_.database().appointments())if(!a.completed){++pending;}QString today=QDate::currentDate().toString(Qt::ISODate);status_->setText(QString("Patients: %1\nGeneral: %2 | Emergency: %3 | Follow-up: %4\nPending appointments: %5\nToday's date: %6").arg(controller_.database().patients().size()).arg(general).arg(emergency).arg(follow).arg(pending).arg(today));}
 void MainWindow::saveNow(){try{controller_.save();status_->setText("Data saved to "+Utils::FileHandler::defaultPath());}catch(const std::exception&e){QMessageBox::critical(this,"Save failed",e.what());}}
 }
