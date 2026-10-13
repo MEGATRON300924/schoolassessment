@@ -26,6 +26,7 @@ private:
     QTableWidget* patientsTable_;
     QTableWidget* appointmentsTable_;
     QTableWidget* queueTable_;
+    QTableWidget* searchResultsTable_;
 
     QLineEdit* idEdit_;
     QLineEdit* nameEdit_;
@@ -38,6 +39,7 @@ private:
     QComboBox* sortKeyBox_;
     QComboBox* algorithmBox_;
     QLabel* status_;
+    QLabel* searchSortStatus_;
 
     QTimer refreshTimer_;
 
